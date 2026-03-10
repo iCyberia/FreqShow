@@ -278,10 +278,12 @@ def main() -> None:
                     last_temp_poll = now_time
 
                 if now_time - last_fps_poll >= 0.5:
-                    fps_text = f"{clock.get_fps():.0f} FPS"
+                    fps_text = f"{clock.get_fps():.0f} FPS {render_ms:.0f}ms"
                     last_fps_poll = now_time
 
+                render_start = time.time()
                 fscontroller.current().render(screen)
+                render_ms = (time.time() - render_start) * 1000.0
 
                 status_text = f"{fps_text}  {cpu_temp_text}"
                 temp_surface = temp_font.render(status_text, True, (255, 255, 255))
