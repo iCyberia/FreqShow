@@ -78,6 +78,12 @@ def clamp(x, x0, x1):
 	else:
 		return x
 
+def lerp_color(c1, c2, t):
+        return (
+                int(c1[0] + (c2[0] - c1[0]) * t),
+                int(c1[1] + (c2[1] - c1[1]) * t),
+                int(c1[2] + (c2[2] - c1[2]) * t),
+        )
 
 class ViewBase(object):
 	"""Base class for simple UI view which represents all the elements drawn
@@ -465,12 +471,19 @@ class WaterfallSpectrogram(SpectrogramBase):
         
                         # Draw the newest FFT row into all newly exposed rows.
                         self.waterfall.lock()
-                        for row in range(scroll_px):
-                                if row >= height:
-                                        break
-                                for i in range(width):
-                                        power = clamp(freqs[i], 0.0, 1.0)
-                                        self.waterfall.set_at((i, row), self.color_func(power))
+                        for i in range(width):
+                                power = clamp(freqs[i], 0.0, 1.0)
+                                new_color = self.color_func(power)
+        
+                                old_sample_y = min(scroll_px, height - 1)
+                                old_color = self.waterfall.get_at((i, old_sample_y))[:3]
+        
+                                for row in range(scroll_px):
+                                        if row >= height:
+                                                break
+                                        t = row / float(max(1, scroll_px - 1))
+                                        blended = lerp_color(new_color, old_color, t * 0.5)
+                                        self.waterfall.set_at((i, row), blended)
                         self.waterfall.unlock()
         
                         self.last_waterfall_update = now
