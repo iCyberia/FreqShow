@@ -3,6 +3,7 @@ import pygame
 from PIL import Image
 from evdev import InputDevice, ecodes, list_devices
 import select
+import time
 
 import st7796_lcd as st7796
 import controller
@@ -16,6 +17,16 @@ TOUCH_SWAP_XY = True
 TOUCH_FLIP_X = True
 TOUCH_FLIP_Y = False
 TOUCH_DEBOUNCE_MS = 250
+
+
+def get_cpu_temp() -> str:
+    try:
+        with open("/sys/class/thermal/thermal_zone0/temp", "r", encoding="utf-8") as f:
+            temp_millic = int(f.read().strip())
+        temp_c = temp_millic / 1000.0
+        return f"{temp_c:.1f}C"
+    except Exception:
+        return "--.-C"
 
 
 def surface_to_pil(surface: pygame.Surface) -> Image.Image:
@@ -225,6 +236,9 @@ def main() -> None:
             fscontroller = controller.FreqShowController(fsmodel)
 
             clock = pygame.time.Clock()
+            temp_font = pygame.font.Font(None, 22)
+            last_temp_poll = 0.0
+            cpu_temp_text = "--.-C"
             running = True
             touch_state = {"raw_x": None, "raw_y": None, "down": False}
             last_touch_ms = 0
@@ -254,7 +268,18 @@ def main() -> None:
                         if hasattr(fscontroller.current(), "click"):
                             fscontroller.current().click(point)
 
+                now_time = time.time()
+                if now_time - last_temp_poll >= 1.0:
+                    cpu_temp_text = get_cpu_temp()
+                    last_temp_poll = now_time
+
                 fscontroller.current().render(screen)
+
+                temp_surface = temp_font.render(cpu_temp_text, True, (255, 255, 255))
+                temp_rect = temp_surface.get_rect()
+                temp_rect.bottomright = (screen.get_width() - 6, screen.get_height() - 6)
+                screen.blit(temp_surface, temp_rect)
+
                 pygame.display.flip()
                 present_to_lcd(lcd, screen)
                 clock.tick(30)
