@@ -292,9 +292,9 @@ def main() -> None:
                 pygame.display.flip()
 
                 if now_time - last_lcd_update >= lcd_update_interval:
-                    present_to_lcd(lcd, screen)
+                    #present_to_lcd(lcd, screen)
                     last_lcd_update = now_time
-                    
+
                 clock.tick(240)
 
             try:
