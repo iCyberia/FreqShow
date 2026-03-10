@@ -439,13 +439,23 @@ class SpectrogramBase(ViewBase):
 					self.render_spectrogram(screen)
 
 	def click(self, location):
-		mx, my = location
-		if my > self.buttons.row_size and my < 4*self.buttons.row_size:
-			# Handle click on spectrogram.
-			self.overlay_enabled = not self.overlay_enabled
-		else:
-			# Handle click on buttons.
-			self.buttons.click(location)
+			mx, my = location
+
+			# If the click is inside the top button row, let buttons handle it.
+			if my <= self.buttons.row_size:
+					self.buttons.click(location)
+					return
+
+			# Otherwise, tune to the tapped frequency.
+			width = self.model.width
+			center = self.model.get_center_freq()
+			sample_rate = self.model.get_sample_rate()
+
+			left_freq = center - (sample_rate / 2.0)
+			tapped_freq = left_freq + (float(mx) / float(width)) * sample_rate
+
+			self.model.set_center_freq(tapped_freq)
+			self.controller.waterfall.clear_waterfall()
 
 	def quit_click(self, button):
 		self.controller.message_dialog('QUIT: Are you sure?',
