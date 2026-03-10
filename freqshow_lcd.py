@@ -239,6 +239,8 @@ def main() -> None:
             temp_font = pygame.font.Font(None, 22)
             last_temp_poll = 0.0
             cpu_temp_text = "--.-C"
+            lcd_update_interval = 1.0 / 15.0
+            last_lcd_update = 0.0
             running = True
             touch_state = {"raw_x": None, "raw_y": None, "down": False}
             last_touch_ms = 0
@@ -288,7 +290,11 @@ def main() -> None:
                 screen.blit(temp_surface, temp_rect)
 
                 pygame.display.flip()
-                present_to_lcd(lcd, screen)
+
+                if now_time - last_lcd_update >= lcd_update_interval:
+                    present_to_lcd(lcd, screen)
+                    last_lcd_update = now_time
+                    
                 clock.tick(240)
 
             try:
