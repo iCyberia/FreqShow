@@ -375,52 +375,68 @@ class SpectrogramBase(ViewBase):
 			[(x, y), (x-size, y+size), (x+size, y+size), (x, y), (x, y+2*size)])
 
 	def render(self, screen):
-		# Clear screen.
-		screen.fill(freqshow.MAIN_BG)
-		if self.overlay_enabled:
-			# Draw shrunken spectrogram with overlaid buttons and axes values.
-			spect_rect = (0, self.buttons.row_size, self.model.width,
-				self.model.height-self.buttons.row_size)
-			self.render_spectrogram(screen.subsurface(spect_rect))
-			# Draw hash marks.
-			# self.render_hash(screen, 0)
-			# self.render_hash(screen, self.model.width/2)
-			# self.render_hash(screen, self.model.width-1)
-			# Draw frequencies in bottom row.
-			bottom_row  = (0, self.model.height-self.buttons.row_size,
-				self.model.width, self.buttons.row_size)
-			freq        = self.model.get_center_freq()
-			bandwidth   = self.model.get_sample_rate()
-			# Render minimum frequency on left.
-			label = ui.render_text('{0:0.2f} Mhz'.format(freq-bandwidth/2.0),
-				size=freqshow.MAIN_FONT)
-			screen.blit(label, ui.align(label.get_rect(), bottom_row,
-				horizontal=ui.ALIGN_LEFT))
-			# Render center frequency in center.
-			label = ui.render_text('{0:0.2f} Mhz'.format(freq),
-				size=freqshow.MAIN_FONT)
-			screen.blit(label, ui.align(label.get_rect(), bottom_row,
-				horizontal=ui.ALIGN_CENTER))
-			# Render maximum frequency on right.
-			label = ui.render_text('{0:0.2f} Mhz'.format(freq+bandwidth/2.0),
-				size=freqshow.MAIN_FONT)
-			screen.blit(label, ui.align(label.get_rect(), bottom_row,
-				horizontal=ui.ALIGN_RIGHT))
-			# Render min intensity in bottom left.
-			label = ui.render_text('{0:0.0f} dB'.format(self.model.min_intensity),
-				size=freqshow.MAIN_FONT)
-			screen.blit(label, ui.align(label.get_rect(), spect_rect,
-				horizontal=ui.ALIGN_LEFT, vertical=ui.ALIGN_BOTTOM))
-			# Render max intensity in top left.
-			label = ui.render_text('{0:0.0f} dB'.format(self.model.max_intensity),
-				size=freqshow.MAIN_FONT)
-			screen.blit(label, ui.align(label.get_rect(), spect_rect,
-				horizontal=ui.ALIGN_LEFT, vertical=ui.ALIGN_TOP))
-			# Draw the buttons.
-			self.buttons.render(screen)
-		else:
-			# Draw fullscreen spectrogram.
-			self.render_spectrogram(screen)
+			# Clear screen.
+			screen.fill(freqshow.MAIN_BG)
+
+			if self.overlay_enabled:
+					# Draw the spectrogram full-screen first so it appears behind buttons.
+					self.render_spectrogram(screen)
+
+					# Draw frequencies in bottom row.
+					bottom_row = (
+							0,
+							self.model.height - self.buttons.row_size,
+							self.model.width,
+							self.buttons.row_size,
+					)
+					freq = self.model.get_center_freq()
+					bandwidth = self.model.get_sample_rate()
+
+					# Render minimum frequency on left.
+					label = ui.render_text(
+							'{0:0.2f} Mhz'.format(freq - bandwidth / 2.0),
+							size=freqshow.MAIN_FONT
+					)
+					screen.blit(label, ui.align(label.get_rect(), bottom_row,
+							horizontal=ui.ALIGN_LEFT))
+
+					# Render center frequency in center.
+					label = ui.render_text(
+							'{0:0.2f} Mhz'.format(freq),
+							size=freqshow.MAIN_FONT
+					)
+					screen.blit(label, ui.align(label.get_rect(), bottom_row,
+							horizontal=ui.ALIGN_CENTER))
+
+					# Render maximum frequency on right.
+					label = ui.render_text(
+							'{0:0.2f} Mhz'.format(freq + bandwidth / 2.0),
+							size=freqshow.MAIN_FONT
+					)
+					screen.blit(label, ui.align(label.get_rect(), bottom_row,
+							horizontal=ui.ALIGN_RIGHT))
+
+					# Render min intensity in bottom left.
+					label = ui.render_text(
+							'{0:0.0f} dB'.format(self.model.min_intensity),
+							size=freqshow.MAIN_FONT
+					)
+					screen.blit(label, ui.align(label.get_rect(), screen.get_rect(),
+							horizontal=ui.ALIGN_LEFT, vertical=ui.ALIGN_BOTTOM))
+
+					# Render max intensity in top left.
+					label = ui.render_text(
+							'{0:0.0f} dB'.format(self.model.max_intensity),
+							size=freqshow.MAIN_FONT
+					)
+					screen.blit(label, ui.align(label.get_rect(), screen.get_rect(),
+							horizontal=ui.ALIGN_LEFT, vertical=ui.ALIGN_TOP))
+
+					# Draw the buttons last so they float over the waterfall.
+					self.buttons.render(screen)
+			else:
+					# Draw fullscreen spectrogram.
+					self.render_spectrogram(screen)
 
 	def click(self, location):
 		mx, my = location
