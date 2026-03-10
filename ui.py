@@ -105,10 +105,16 @@ class Button(object):
 			radius = min(18, height // 3)
 
 			# Main button body.
-			pygame.draw.rect(screen, self.bg_color, rect, border_radius=radius)
+			button_surface = pygame.Surface((width, height), pygame.SRCALPHA)
+			button_color = (*self.bg_color, 180)
+			pygame.draw.rect(button_surface, button_color, button_surface.get_rect(), border_radius=radius)
+			screen.blit(button_surface, rect.topleft)
 
 			# Softer outer border.
-			pygame.draw.rect(screen, self.border_color, rect, width=self.border_px, border_radius=radius)
+			border_surface = pygame.Surface((width, height), pygame.SRCALPHA)
+			border_color = (*self.border_color, 200)
+			pygame.draw.rect(border_surface, border_color, border_surface.get_rect(), width=self.border_px, border_radius=radius)
+			screen.blit(border_surface, rect.topleft)
 
 			# Subtle top highlight for a more modern surface feel.
 			highlight_rect = pygame.Rect(x + 1, y + 1, max(1, width - 2), max(1, height // 3))
