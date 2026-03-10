@@ -212,7 +212,7 @@ def show_sdr_error(lcd, screen: pygame.Surface, error_text: str) -> bool:
                 last_touch_ms = now
                 return True
 
-        clock.tick(30)
+        clock.tick(60)
 
 
 def main() -> None:
@@ -282,7 +282,7 @@ def main() -> None:
 
                 pygame.display.flip()
                 present_to_lcd(lcd, screen)
-                clock.tick(30)
+                clock.tick(60)
 
             try:
                 fsmodel.cleanup()
