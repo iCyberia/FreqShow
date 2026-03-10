@@ -1,0 +1,153 @@
+#!/usr/bin/env python3
+import sys
+import time
+import pygame
+from PIL import Image
+from evdev import InputDevice, ecodes
+import select
+
+# Add Waveshare driver path
+import st7796_lcd as st7796
+import controller
+import model
+import views
+
+DISPLAY_WIDTH = 480
+DISPLAY_HEIGHT = 320
+
+
+def surface_to_pil(surface: pygame.Surface) -> Image.Image:
+    """Convert a pygame surface into a PIL Image."""
+    raw = pygame.image.tostring(surface, "RGB")
+    width, height = surface.get_size()
+    return Image.frombytes("RGB", (width, height), raw)
+
+
+def present_to_lcd(lcd, surface: pygame.Surface) -> None:
+    """Push the pygame surface to the physical LCD."""
+    image = surface_to_pil(surface)
+    lcd.show_image(image)
+
+
+def show_sdr_error(lcd, screen, error_text):
+    """Display a fullscreen SDR error dialog with an OK button."""
+    font_title = pygame.font.Font(None, 36)
+    font_body = pygame.font.Font(None, 24)
+    font_button = pygame.font.Font(None, 28)
+
+    clock = pygame.time.Clock()
+
+    while True:
+        screen.fill((20, 20, 20))
+
+        width, height = screen.get_size()
+
+        title = font_title.render("SDR Not Found", True, (255, 80, 80))
+        title_rect = title.get_rect(center=(width // 2, height // 4))
+        screen.blit(title, title_rect)
+
+        lines = [
+            "FreqShow could not open the RTL-SDR.",
+            "",
+            "Check the USB connection and power.",
+            "Unplug/replug the SDR if needed.",
+            "",
+            f"Error: {error_text}",
+        ]
+
+        y = height // 4 + 40
+        for line in lines:
+            text = font_body.render(line, True, (230, 230, 230))
+            text_rect = text.get_rect(center=(width // 2, y))
+            screen.blit(text, text_rect)
+            y += 28
+
+        button_w = 120
+        button_h = 50
+        button_rect = pygame.Rect(
+            (width - button_w) // 2,
+            height - 90,
+            button_w,
+            button_h
+        )
+
+        pygame.draw.rect(screen, (60, 60, 60), button_rect)
+        pygame.draw.rect(screen, (200, 200, 200), button_rect, 2)
+
+        ok_text = font_button.render("OK", True, (255, 255, 255))
+        ok_rect = ok_text.get_rect(center=button_rect.center)
+        screen.blit(ok_text, ok_rect)
+
+        pygame.display.flip()
+        present_to_lcd(lcd, screen)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return False
+            if event.type == pygame.KEYDOWN:
+                if event.key in (pygame.K_RETURN, pygame.K_SPACE, pygame.K_ESCAPE):
+                    return True
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if button_rect.collidepoint(event.pos):
+                    return True
+
+        clock.tick(30)
+
+
+def main():
+    import traceback
+
+    lcd = st7796.st7796()
+    lcd.lcd_init()
+    lcd.clear()
+
+    pygame.init()
+    screen = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
+    pygame.display.set_caption("FreqShow LCD")
+
+    while True:
+        try:
+            width, height = screen.get_size()
+
+            fsmodel = model.FreqShowModel(width, height)
+            fscontroller = controller.FreqShowController(fsmodel)
+
+            clock = pygame.time.Clock()
+            running = True
+
+            while running:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        running = False
+                    else:
+                        fscontroller.current().handle_event(event)
+
+                fscontroller.current().render(screen)
+                pygame.display.flip()
+                present_to_lcd(lcd, screen)
+                clock.tick(30)
+
+            try:
+                fsmodel.cleanup()
+            except Exception:
+                pass
+
+            break
+
+        except Exception as e:
+            print("FreqShow startup/runtime error:", e, flush=True)
+            traceback.print_exc()
+
+            try:
+                retry = show_sdr_error(lcd, screen, str(e))
+            except Exception:
+                retry = False
+
+            if not retry:
+                break
+
+    pygame.quit()
+
+
+if __name__ == "__main__":
+    main()

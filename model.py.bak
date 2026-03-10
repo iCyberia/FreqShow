@@ -28,7 +28,7 @@ from rtlsdr import *
 import freqshow
 
 CENTER_OFFSET_MHZ = 0.010
-DISPLAY_OFFSET_MHZ = 0.07
+DISPLAY_OFFSET_MHZ = 0.035
 
 class FreqShowModel(object):
         def __init__(self, width, height):
@@ -48,7 +48,7 @@ class FreqShowModel(object):
                 self.sdr.offset_tuning = False
                 self.sdr.freq_correction = 31
                 self.tune_offset_hz = 000000.0
-                self.set_center_freq(99.5)
+                self.set_center_freq(162.55)
                 self.set_sample_rate(2.4)
                 self.set_gain(10)
 
@@ -139,7 +139,8 @@ class FreqShowModel(object):
                 """Return requested center frequency of tuner in megahertz."""
                 return self.sdr.get_center_freq()/1000000.0
 
-        def set_center_freq(self, freq_mhz):
+
+	def set_center_freq(self, freq_mhz):
                 """Set tuner center frequency to provided megahertz value."""
                 try:
                         tuned_hz = freq_mhz * 1000000.0
@@ -153,6 +154,8 @@ class FreqShowModel(object):
                         self._clear_intensity()
                 except Exception as e:
                         print(f"SET FREQ FAILED requested={freq_mhz} error={e}", flush=True)
+
+
 
         def get_sample_rate(self):
                 """Return sample rate of tuner in megahertz."""
@@ -248,7 +251,7 @@ class FreqShowModel(object):
                 freqs = np.fft.fftshift(freqs)
 
                 # Apply display-only offset so the visual peak lands under the center marker.
-                bin_hz = self.sdr.get_sample_rate() / len(freqs)
+                bin_hz = freqshow.SDR_SAMPLE_RATE / len(freqs)
                 offset_bins = int(round((DISPLAY_OFFSET_MHZ * 1000000.0) / bin_hz))
                 freqs = np.roll(freqs, -offset_bins)
 

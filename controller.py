@@ -40,7 +40,7 @@ class FreqShowController(object):
 		self.waterfall = WaterfallSpectrogram(model, self)
 		# Start with instantaneous spectrogram.
 		self._current_view = None
-		self.change_to_instant()
+		self.change_to_waterfall()
 
 	def change_view(self, view):
 		"""Change to specified view."""
@@ -93,6 +93,9 @@ class FreqShowController(object):
 		"""Change to waterfall spectrogram view."""
 		self._main_view = self.waterfall
 		self.change_view(self.waterfall)
+
+	def find_strongest_signal(self):
+		self.model.find_strongest_signal()
 
 	def change_to_settings(self, *args):
 		"""Change to settings list view."""

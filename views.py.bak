@@ -32,7 +32,6 @@ import pygame
 import freqshow
 import ui
 
-CENTER_LINE_OFFSET_PX = 0
 
 # Color and gradient interpolation functions used by waterfall spectrogram.
 def lerp(x, x0, x1, y0, y1):
@@ -335,7 +334,7 @@ class SpectrogramBase(ViewBase):
 		self.model      = model
 		self.controller = controller
 		self.buttons = ui.ButtonGrid(model.width, model.height, 4, 5)
-		self.buttons.add(0, 0, 'TUNE', click=self.controller.change_to_settings)
+		self.buttons.add(0, 0, 'CONFIG', click=self.controller.change_to_settings)
 		self.buttons.add(1, 0, 'SWITCH MODE', click=self.controller.toggle_main, colspan=2)
 		self.buttons.add(3, 0, 'FIND', click=self.find_click,
 			bg_color=freqshow.CANCEL_BG)
@@ -365,12 +364,12 @@ class SpectrogramBase(ViewBase):
 		if self.overlay_enabled:
 			# Draw shrunken spectrogram with overlaid buttons and axes values.
 			spect_rect = (0, self.buttons.row_size, self.model.width,
-				self.model.height-self.buttons.row_size)
+				self.model.height-2*self.buttons.row_size)
 			self.render_spectrogram(screen.subsurface(spect_rect))
 			# Draw hash marks.
-			# self.render_hash(screen, 0)
-			# self.render_hash(screen, self.model.width/2)
-			# self.render_hash(screen, self.model.width-1)
+			self.render_hash(screen, 0)
+			self.render_hash(screen, self.model.width/2)
+			self.render_hash(screen, self.model.width-1)
 			# Draw frequencies in bottom row.
 			bottom_row  = (0, self.model.height-self.buttons.row_size,
 				self.model.width, self.buttons.row_size)
@@ -425,63 +424,61 @@ class SpectrogramBase(ViewBase):
 
 
 class WaterfallSpectrogram(SpectrogramBase):
-        """Scrolling waterfall plot of spectrogram data."""
+	"""Scrolling waterfall plot of spectrogram data."""
 
-        def __init__(self, model, controller):
-                super(WaterfallSpectrogram, self).__init__(model, controller)
-                self.color_func = gradient_func(freqshow.WATERFALL_GRAD)
-                self.waterfall = pygame.Surface((model.width, model.height))
+	def __init__(self, model, controller):
+		super(WaterfallSpectrogram, self).__init__(model, controller)
+		self.color_func = gradient_func(freqshow.WATERFALL_GRAD)
+		self.waterfall = pygame.Surface((model.width, model.height))
 
-        def clear_waterfall(self):
-                self.waterfall.fill(freqshow.MAIN_BG)
+	def clear_waterfall(self):
+		self.waterfall.fill(freqshow.MAIN_BG)
 
-        def render_spectrogram(self, screen):
-                # Grab spectrogram data.
-                freqs = self.model.get_data()
-                # Scroll up the waterfall display.
-                self.waterfall.scroll(0, 1)
-                # Scale the FFT values to the range 0 to 1.
-                freqs = (freqs-self.model.min_intensity)/self.model.range
-                # Convert scaled values to pixels drawn at the bottom of the display.
-                x, y, width, height = screen.get_rect()
-                wx, wy, wwidth, wheight = self.waterfall.get_rect()
-                offset = 0
-                # Draw FFT values mapped through the gradient function to a color.
-                self.waterfall.lock()
-                for i in range(width):
-                        power = clamp(freqs[i], 0.0, 1.0)
-                        self.waterfall.set_at((i, 0), self.color_func(power))
-
-                self.waterfall.unlock()
-                screen.blit(self.waterfall, (0, 0), area=(0, offset, width, height))
-
-                # Draw 1px red center line.
-                center_x = (width // 2) + CENTER_LINE_OFFSET_PX
-                pygame.draw.line(screen, (255, 0, 0), (center_x, 0), (center_x, height - 1), 1)
+	def render_spectrogram(self, screen):
+		# Grab spectrogram data.
+		freqs = self.model.get_data()
+		# Scroll up the waterfall display.
+		self.waterfall.scroll(0, 2)
+		# Scale the FFT values to the range 0 to 1.
+		freqs = (freqs-self.model.min_intensity)/self.model.range
+		# Convert scaled values to pixels drawn at the bottom of the display.
+		x, y, width, height = screen.get_rect()
+		wx, wy, wwidth, wheight = self.waterfall.get_rect()
+		offset = 0
+		# Draw FFT values mapped through the gradient function to a color.
+		self.waterfall.lock()
+		for i in range(width):
+			power = clamp(freqs[i], 0.0, 1.0)
+			self.waterfall.set_at((i, 0), self.color_func(power))
+			self.waterfall.set_at((i, 1), self.color_func(power))
+		self.waterfall.unlock()
+		screen.blit(self.waterfall, (0, 0), area=(0, offset, width, height))
+	        # Draw 1px red center line.
+		center_x = width // 2
+        	pygame.draw.line(screen, (255, 0, 0), (center_x, 0), (center_x, height - 1), 1)
 
 
 class InstantSpectrogram(SpectrogramBase):
-        """Instantaneous point in time line plot of the spectrogram."""
+	"""Instantaneous point in time line plot of the spectrogram."""
 
-        def __init__(self, model, controller):
-                super(InstantSpectrogram, self).__init__(model, controller)
+	def __init__(self, model, controller):
+		super(InstantSpectrogram, self).__init__(model, controller)
 
-        def render_spectrogram(self, screen):
-                # Grab spectrogram data.
-                freqs = self.model.get_data()
-                # Scale frequency values to fit on the screen based on the min and max
-                # intensity values.
-                x, y, width, height = screen.get_rect()
-                freqs = height-np.floor(((freqs-self.model.min_intensity)/self.model.range)*height)
-                # Render frequency graph.
-                screen.fill(freqshow.MAIN_BG)
-                # Draw line segments to join each FFT result bin.
-                ylast = freqs[0]
-                for i in range(1, min(width, len(freqs))):
-                        y = freqs[i]
-                        pygame.draw.line(screen, freqshow.INSTANT_LINE, (i-1, ylast), (i, y))
-                        ylast = y
-
-                # Draw 1px red center line.
-                center_x = (width // 2) + CENTER_LINE_OFFSET_PX
-                pygame.draw.line(screen, (255, 0, 0), (center_x, 0), (center_x, height - 1), 1)
+	def render_spectrogram(self, screen):
+		# Grab spectrogram data.
+		freqs = self.model.get_data()
+		# Scale frequency values to fit on the screen based on the min and max
+		# intensity values.
+		x, y, width, height = screen.get_rect()
+		freqs = height-np.floor(((freqs-self.model.min_intensity)/self.model.range)*height)
+		# Render frequency graph.
+		screen.fill(freqshow.MAIN_BG)
+		# Draw line segments to join each FFT result bin.
+		ylast = freqs[0]
+		for i in range(1, min(width, len(freqs))):
+			y = freqs[i]
+			pygame.draw.line(screen, freqshow.INSTANT_LINE, (i-1, ylast), (i, y))
+			ylast = y
+		# Draw 1px red center line.
+		center_x = width // 2
+		pygame.draw.line(screen, (255, 0, 0), (center_x, 0), (center_x, height - 1), 1)
