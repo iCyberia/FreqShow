@@ -66,12 +66,24 @@ class FreqShowModel(object):
 
                 # Load saved settings, if any.
                 settings = self.load_settings()
-                self.center_freq = settings.get("center_freq", self.center_freq)
-                self.sample_rate = settings.get("sample_rate", self.sample_rate)
-                self.gain = settings.get("gain", self.gain)
-                self.min_intensity = settings.get("min_intensity", self.min_intensity)
-                self.max_intensity = settings.get("max_intensity", self.max_intensity)
-                self.waterfall_speed_index = settings.get("waterfall_speed_index", self.waterfall_speed_index)
+
+                if settings.get("center_freq") is not None:
+                        self.center_freq = settings["center_freq"]
+
+                if settings.get("sample_rate") is not None:
+                        self.sample_rate = settings["sample_rate"]
+
+                if settings.get("gain") is not None:
+                        self.gain = settings["gain"]
+
+                if settings.get("min_intensity") is not None:
+                        self.min_intensity = settings["min_intensity"]
+
+                if settings.get("max_intensity") is not None:
+                        self.max_intensity = settings["max_intensity"]
+
+                if settings.get("waterfall_speed_index") is not None:
+                        self.waterfall_speed_index = settings["waterfall_speed_index"]
 
                 # Apply the settings.
                 self.set_min_intensity(self.min_intensity)

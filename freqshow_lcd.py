@@ -307,8 +307,11 @@ def main() -> None:
 
         except Exception as e:
             print(f"FreqShow startup/runtime error: {e}", flush=True)
-            traceback.print_exc()
+            with open("/home/hiroshi/FreqShow/freqshow_error.log", "a", encoding="utf-8") as log_file:
+                log_file.write(f"\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] {e}\n")
+                traceback.print_exc(file=log_file)
 
+            traceback.print_exc()
             retry = show_sdr_error(lcd, screen, str(e))
             if not retry:
                 break
