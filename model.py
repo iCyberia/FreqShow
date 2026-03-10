@@ -58,8 +58,8 @@ class FreqShowModel(object):
         def get_waterfall_speed_label(self):
                 return self.waterfall_speed_labels[self.waterfall_speed_index]
 
-        def get_waterfall_speed_divisor(self):
-                return self.waterfall_speed_divisors[self.waterfall_speed_index]
+        def get_waterfall_speed_interval(self):
+                return self.waterfall_speed_intervals[self.waterfall_speed_index]
 
         def cycle_waterfall_speed(self):
                 self.waterfall_speed_index = (self.waterfall_speed_index + 1) % len(self.waterfall_speed_labels)

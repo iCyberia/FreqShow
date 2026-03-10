@@ -31,6 +31,7 @@ import pygame
 
 import freqshow
 import ui
+import time
 
 CENTER_LINE_OFFSET_PX = 0
 
@@ -438,21 +439,21 @@ class WaterfallSpectrogram(SpectrogramBase):
                 super(WaterfallSpectrogram, self).__init__(model, controller)
                 self.color_func = gradient_func(freqshow.WATERFALL_GRAD)
                 self.waterfall = pygame.Surface((model.width, model.height))
-                self.waterfall_frame_counter = 0
+                self.last_waterfall_update = 0.0
 
         def clear_waterfall(self):
                 self.waterfall.fill(freqshow.MAIN_BG)
 
         def render_spectrogram(self, screen):
-                self.waterfall_frame_counter += 1
-                divisor = self.model.get_waterfall_speed_divisor()
+                now = time.time()
+                interval = self.model.get_waterfall_speed_interval()
         
                 # Get screen dimensions either way so we can always blit the current waterfall.
                 x, y, width, height = screen.get_rect()
                 offset = 0
         
-                # Only add a new waterfall row when the selected speed interval says to.
-                if self.waterfall_frame_counter % divisor == 0:
+                # Only add a new waterfall row when enough time has passed.
+                if now - self.last_waterfall_update >= interval:
                         # Grab spectrogram data.
                         freqs = self.model.get_data()
         
@@ -468,6 +469,8 @@ class WaterfallSpectrogram(SpectrogramBase):
                                 power = clamp(freqs[i], 0.0, 1.0)
                                 self.waterfall.set_at((i, 0), self.color_func(power))
                         self.waterfall.unlock()
+        
+                        self.last_waterfall_update = now
         
                 # Always draw the current waterfall image to the screen.
                 screen.blit(self.waterfall, (0, 0), area=(0, offset, width, height))
