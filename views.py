@@ -458,10 +458,11 @@ class WaterfallSpectrogram(SpectrogramBase):
                 scroll_px = self.model.get_waterfall_scroll_pixels()
         
                 x, y, width, height = screen.get_rect()
+                freqs = [0.5] * width
                 offset = 0
         
                 if now - self.last_waterfall_update >= interval:
-                        ffreqs = [0.5] * width
+                        #ffreqs = [0.5] * width
         
                         # Scroll the existing waterfall image down by multiple pixels.
                         self.waterfall.scroll(0, scroll_px)
