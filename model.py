@@ -240,11 +240,10 @@ class FreqShowModel(object):
         def set_sample_rate(self, sample_rate_mhz):
                 """Set tuner sample rate to provided frequency in megahertz."""
                 try:
-                        self.sdr.set_sample_rate(sample_rate_mhz*1000000.0)
+                        self.sdr.set_sample_rate(sample_rate_mhz * 1000000.0)
+                        self.sample_rate = sample_rate_mhz
                         self.save_settings()
                 except IOError:
-                        # Error setting value, ignore it for now but in the future consider
-                        # adding an error message dialog.
                         pass
 
         def get_gain(self):
@@ -263,17 +262,17 @@ class FreqShowModel(object):
                 if gain_db == 'AUTO':
                         self.sdr.set_manual_gain_enabled(False)
                         self.auto_gain = True
+                        self.gain = 'AUTO'
                         self.save_settings()
                         self._clear_intensity()
                 else:
                         try:
                                 self.sdr.set_gain(float(gain_db))
                                 self.auto_gain = False
+                                self.gain = float(gain_db)
                                 self.save_settings()
                                 self._clear_intensity()
                         except IOError:
-                                # Error setting value, ignore it for now but in the future consider
-                                # adding an error message dialog.
                                 pass
 
         def get_min_string(self):
@@ -286,17 +285,14 @@ class FreqShowModel(object):
                         return '{0:0.0f}'.format(self.min_intensity)
 
         def set_min_intensity(self, intensity):
-                """Set Y axis minimum intensity in decibels (i.e. dB value at bottom of 
-                spectrograms).  Can also pass 'AUTO' to enable auto scaling of value.
-                """
                 if intensity == 'AUTO':
                         self.min_auto_scale = True
+                        self.min_intensity = None
                         self.save_settings()
                 else:
                         self.min_auto_scale = False
                         self.min_intensity = float(intensity)
                         self.save_settings()
-                self._clear_intensity()
 
         def get_max_string(self):
                 """Return string with the appropriate maximum intensity value, either
@@ -308,17 +304,14 @@ class FreqShowModel(object):
                         return '{0:0.0f}'.format(self.max_intensity)
 
         def set_max_intensity(self, intensity):
-                """Set Y axis maximum intensity in decibels (i.e. dB value at top of 
-                spectrograms).  Can also pass 'AUTO' to enable auto scaling of value.
-                """
                 if intensity == 'AUTO':
                         self.max_auto_scale = True
+                        self.max_intensity = None
                         self.save_settings()
                 else:
                         self.max_auto_scale = False
                         self.max_intensity = float(intensity)
                         self.save_settings()
-                self._clear_intensity()
 
         def get_data(self):
                 """Get spectrogram data from the tuner. Will return width number of
