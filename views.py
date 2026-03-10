@@ -482,7 +482,7 @@ class WaterfallSpectrogram(SpectrogramBase):
                                         if row >= height:
                                                 break
                                         t = row / float(max(1, scroll_px - 1))
-                                        blended = lerp_color(new_color, old_color, t * 0.8)
+                                        blended = lerp_color(new_color, old_color, t * 0.1)
                                         self.waterfall.set_at((i, row), blended)
                         self.waterfall.unlock()
         
