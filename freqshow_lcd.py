@@ -242,6 +242,8 @@ def main() -> None:
             running = True
             touch_state = {"raw_x": None, "raw_y": None, "down": False}
             last_touch_ms = 0
+            last_fps_poll = 0.0
+            fps_text = "-- FPS"
 
             while running:
                 for event in pygame.event.get():
@@ -273,9 +275,14 @@ def main() -> None:
                     cpu_temp_text = get_cpu_temp()
                     last_temp_poll = now_time
 
+                if now_time - last_fps_poll >= 0.5:
+                    fps_text = f"{clock.get_fps():.0f} FPS"
+                    last_fps_poll = now_time
+
                 fscontroller.current().render(screen)
 
-                temp_surface = temp_font.render(cpu_temp_text, True, (255, 255, 255))
+                status_text = f"{fps_text}  {cpu_temp_text}"
+                temp_surface = temp_font.render(status_text, True, (255, 255, 255))
                 temp_rect = temp_surface.get_rect()
                 temp_rect.bottomright = (screen.get_width() - 6, screen.get_height() - 6)
                 screen.blit(temp_surface, temp_rect)
