@@ -41,34 +41,44 @@ class FreqShowModel(object):
                 # Set properties that will be used by views.
                 self.width = width
                 self.height = height
+
                 # Initialize auto scaling both min and max intensity (Y axis of plots).
                 self.min_auto_scale = True
                 self.max_auto_scale = True
-                self.set_min_intensity(-3)
-                self.set_max_intensity(50)
+
                 # Initialize RTL-SDR library.
                 self.sdr = RtlSdr()
                 self.sdr.offset_tuning = False
                 self.sdr.freq_correction = 31
                 self.tune_offset_hz = 000000.0
-                self.set_center_freq(99.5)
-                self.set_sample_rate(2.4)
-                self.set_gain(10)
+
+                # Default startup values.
                 self.waterfall_speed_index = 1
                 self.waterfall_speed_labels = ['SLOW', 'MED', 'FAST', 'MAX']
                 self.waterfall_speed_intervals = [0.1, 1.0 / 30.0, 0.01, 1.0 / 300.0]
                 self.waterfall_scroll_pixels = [1, 2, 4, 8]
+
+                self.center_freq = 99.5
+                self.sample_rate = 2.4
+                self.gain = 10
+                self.min_intensity = -3
+                self.max_intensity = 50
+
+                # Load saved settings, if any.
+                settings = self.load_settings()
                 self.center_freq = settings.get("center_freq", self.center_freq)
                 self.sample_rate = settings.get("sample_rate", self.sample_rate)
                 self.gain = settings.get("gain", self.gain)
                 self.min_intensity = settings.get("min_intensity", self.min_intensity)
                 self.max_intensity = settings.get("max_intensity", self.max_intensity)
                 self.waterfall_speed_index = settings.get("waterfall_speed_index", self.waterfall_speed_index)
-                self.save_settings()
+
+                # Apply the settings.
+                self.set_min_intensity(self.min_intensity)
+                self.set_max_intensity(self.max_intensity)
                 self.set_center_freq(self.center_freq)
                 self.set_sample_rate(self.sample_rate)
                 self.set_gain(self.gain)
-                settings = self.load_settings()
 
         def load_settings(self):
                 try:
