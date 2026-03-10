@@ -64,6 +64,16 @@ class FreqShowModel(object):
                 self.min_intensity = -3
                 self.max_intensity = 50
 
+                self.waterfall_avg_index = 1
+                self.waterfall_avg_labels = ['OFF', 'LOW', 'MED', 'HIGH']
+                self.waterfall_avg_row_sets = [
+                [],
+                [1, 2, 3],
+                [1, 2, 3, 4, 5],
+                [1, 2, 3, 4, 5, 6, 7, 8, 9],
+                ]
+                self.waterfall_avg_alphas = [0.0, 0.18, 0.30, 0.42]
+
                 # Load saved settings, if any.
                 settings = self.load_settings()
 
@@ -97,14 +107,23 @@ class FreqShowModel(object):
                 self.set_center_freq(self.center_freq)
                 self.set_sample_rate(self.sample_rate)
                 self.set_gain(self.gain)
+                self.waterfall_avg_index = settings.get('waterfall_avg_index', self.waterfall_avg_index)
 
         def load_settings(self):
                 try:
                         with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
-                                return json.load(f)
+                                settings = json.load(f)
                 except Exception:
-                        return {}
-                
+                        settings = {}
+
+                self.center_freq = settings.get("center_freq", self.center_freq)
+                self.sample_rate = settings.get("sample_rate", self.sample_rate)
+                self.gain = settings.get("gain", self.gain)
+                self.min_intensity = settings.get("min_intensity", self.min_intensity)
+                self.max_intensity = settings.get("max_intensity", self.max_intensity)
+                self.waterfall_speed_index = settings.get("waterfall_speed_index", self.waterfall_speed_index)
+                self.waterfall_avg_index = settings.get("waterfall_avg_index", self.waterfall_avg_index)
+
         def save_settings(self):
                 settings = {
                         "center_freq": self.center_freq,
@@ -113,9 +132,12 @@ class FreqShowModel(object):
                         "min_intensity": self.min_intensity,
                         "max_intensity": self.max_intensity,
                         "waterfall_speed_index": self.waterfall_speed_index,
+                        "waterfall_avg_index": self.waterfall_avg_index,
                 }
                 with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
                         json.dump(settings, f)
+
+
 
         def get_waterfall_speed_label(self):
                 return self.waterfall_speed_labels[self.waterfall_speed_index]
@@ -130,6 +152,18 @@ class FreqShowModel(object):
         def get_waterfall_scroll_pixels(self):
                 return self.waterfall_scroll_pixels[self.waterfall_speed_index]
         
+        def get_waterfall_avg_label(self):
+                return self.waterfall_avg_labels[self.waterfall_avg_index]
+
+        def get_waterfall_avg_rows(self):
+                return self.waterfall_avg_row_sets[self.waterfall_avg_index]
+
+        def get_waterfall_avg_alpha(self):
+                return self.waterfall_avg_alphas[self.waterfall_avg_index]
+
+        def cycle_waterfall_avg(self):
+                self.waterfall_avg_index = (self.waterfall_avg_index + 1) % len(self.waterfall_avg_labels)
+                self.save_settings()
 
         def _clear_intensity(self):
                 if self.min_auto_scale:

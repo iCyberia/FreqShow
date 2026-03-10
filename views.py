@@ -25,35 +25,41 @@
 # SOFTWARE.
 import math
 import sys
+import time
 
 import numpy as np
 import pygame
 
 import freqshow
 import ui
-import time
 
 CENTER_LINE_OFFSET_PX = 0
+
 
 # Color and gradient interpolation functions used by waterfall spectrogram.
 def lerp(x, x0, x1, y0, y1):
 	"""Linear interpolation of value y given min and max y values (y0 and y1),
 	min and max x values (x0 and x1), and x value.
 	"""
-	return y0 + (y1 - y0)*((x - x0)/(x1 - x0))
+	return y0 + (y1 - y0) * ((x - x0) / (x1 - x0))
+
 
 def rgb_lerp(x, x0, x1, c0, c1):
 	"""Linear interpolation of RGB color tuple c0 and c1."""
-	return (math.floor(lerp(x, x0, x1, float(c0[0]), float(c1[0]))),
-			math.floor(lerp(x, x0, x1, float(c0[1]), float(c1[1]))),
-			math.floor(lerp(x, x0, x1, float(c0[2]), float(c1[2]))))
+	return (
+		math.floor(lerp(x, x0, x1, float(c0[0]), float(c1[0]))),
+		math.floor(lerp(x, x0, x1, float(c0[1]), float(c1[1]))),
+		math.floor(lerp(x, x0, x1, float(c0[2]), float(c1[2]))),
+	)
+
 
 def gradient_func(colors):
 	"""Build a waterfall color function from a list of RGB color tuples.  The
 	returned function will take a numeric value from 0 to 1 and return a color
 	interpolated across the gradient of provided RGB colors.
 	"""
-	grad_width = 1.0 / (len(colors)-1.0)
+	grad_width = 1.0 / (len(colors) - 1.0)
+
 	def _fun(value):
 		if value <= 0.0:
 			return colors[0]
@@ -62,10 +68,12 @@ def gradient_func(colors):
 		else:
 			pos = int(value / grad_width)
 			c0 = colors[pos]
-			c1 = colors[pos+1]
-			x = (value % grad_width)/grad_width
+			c1 = colors[pos + 1]
+			x = (value % grad_width) / grad_width
 			return rgb_lerp(x, 0.0, 1.0, c0, c1)
+
 	return _fun
+
 
 def clamp(x, x0, x1):
 	"""Clamp a provided value to be between x0 and x1 (inclusive).  If value is
@@ -78,12 +86,25 @@ def clamp(x, x0, x1):
 	else:
 		return x
 
+
 def lerp_color(c1, c2, t):
-        return (
-                int(c1[0] + (c2[0] - c1[0]) * t),
-                int(c1[1] + (c2[1] - c1[1]) * t),
-                int(c1[2] + (c2[2] - c1[2]) * t),
-        )
+	return (
+		int(c1[0] + (c2[0] - c1[0]) * t),
+		int(c1[1] + (c2[1] - c1[1]) * t),
+		int(c1[2] + (c2[2] - c1[2]) * t),
+	)
+
+
+def average_colors(colors):
+	if not colors:
+		return (0, 0, 0)
+	n = len(colors)
+	return (
+		sum(c[0] for c in colors) // n,
+		sum(c[1] for c in colors) // n,
+		sum(c[2] for c in colors) // n,
+	)
+
 
 class ViewBase(object):
 	"""Base class for simple UI view which represents all the elements drawn
@@ -106,16 +127,15 @@ class MessageDialog(ViewBase):
 		self.accept = accept
 		self.cancel = cancel
 		self.buttons = ui.ButtonGrid(model.width, model.height, 4, 5)
-		self.buttons.add(3, 4, 'OK', click=self.accept_click, 
+		self.buttons.add(3, 4, 'OK', click=self.accept_click,
 			bg_color=freqshow.ACCEPT_BG)
 		if cancel is not None:
-			self.buttons.add(0, 4, 'CANCEL', click=self.cancel_click, 
+			self.buttons.add(0, 4, 'CANCEL', click=self.cancel_click,
 				bg_color=freqshow.CANCEL_BG)
 		self.label = ui.render_text(text, size=freqshow.NUM_FONT,
 			fg=freqshow.BUTTON_FG, bg=freqshow.MAIN_BG)
 		self.label_rect = ui.align(self.label.get_rect(),
 			(0, 0, model.width, model.height))
-		
 
 	def render(self, screen):
 		# Draw background, buttons, and text.
@@ -173,12 +193,12 @@ class NumberDialog(ViewBase):
 		self.buttons.add(3, 3, 'CANCEL', click=self.cancel_click,
 			bg_color=freqshow.CANCEL_BG)
 		self.buttons.add(3, 4, 'ACCEPT', click=self.accept_click,
-			bg_color=freqshow.ACCEPT_BG) 
+			bg_color=freqshow.ACCEPT_BG)
 		if has_auto:
 			self.buttons.add(3, 2, 'AUTO', click=self.auto_click)
 		# Build label text for faster rendering.
 		self.input_rect = (0, 0, self.model.width, self.buttons.row_size)
-		self.label = ui.render_text(label_text, size=freqshow.MAIN_FONT, 
+		self.label = ui.render_text(label_text, size=freqshow.MAIN_FONT,
 			fg=freqshow.INPUT_FG, bg=freqshow.INPUT_BG)
 		self.label_pos = ui.align(self.label.get_rect(), self.input_rect,
 			horizontal=ui.ALIGN_LEFT, hpad=10)
@@ -259,28 +279,34 @@ class SettingsList(ViewBase):
 	"""Setting list view. Allows user to modify some model configuration."""
 
 	def __init__(self, model, controller):
-		self.model      = model
+		self.model = model
 		self.controller = controller
 		# Create button labels with current model values.
 		centerfreq_text = 'CENTER FREQ: {0:0.2f} MHz'.format(model.get_center_freq())
 		samplerate_text = 'SAMPLE RATE: {0:0.2f} MHz'.format(model.get_sample_rate())
-		gain_text       = 'GAIN: {0} dB'.format(model.get_gain())
-		min_text        = 'MIN: {0} dB'.format(model.get_min_string())
-		max_text        = 'MAX: {0} dB'.format(model.get_max_string())
+		gain_text = 'GAIN: {0} dB'.format(model.get_gain())
+		min_text = 'MIN: {0} dB'.format(model.get_min_string())
+		max_text = 'MAX: {0} dB'.format(model.get_max_string())
 		wf_text = 'WF SPEED: {0}'.format(model.get_waterfall_speed_label())
+		wf_avg_text = 'WF AVG\n{}'.format(model.get_waterfall_avg_label())
 
 		# Create buttons.
 		self.buttons = ui.ButtonGrid(model.width, model.height, 4, 5)
 		self.buttons.add(0, 0, centerfreq_text, colspan=4, click=self.centerfreq_click)
 		self.buttons.add(0, 1, samplerate_text, colspan=4, click=self.sample_click)
-		self.buttons.add(0, 2, gain_text,       colspan=4, click=self.gain_click)
-		self.buttons.add(0, 3, min_text,        colspan=2, click=self.min_click)
-		self.buttons.add(2, 3, max_text,        colspan=2, click=self.max_click)
+		self.buttons.add(0, 2, gain_text, colspan=4, click=self.gain_click)
+		self.buttons.add(0, 3, min_text, colspan=2, click=self.min_click)
+		self.buttons.add(2, 3, max_text, colspan=2, click=self.max_click)
 		self.buttons.add(0, 4, 'BACK', click=self.controller.change_to_main)
-		self.buttons.add(1, 4, wf_text, colspan=3, click=self.waterfall_speed_click)
+		self.buttons.add(1, 4, wf_text, colspan=2, click=self.waterfall_speed_click)
+		self.buttons.add(3, 4, wf_avg_text, click=self.waterfall_avg_click)
 
 	def waterfall_speed_click(self, button):
 		self.model.cycle_waterfall_speed()
+		self.controller.change_to_settings()
+
+	def waterfall_avg_click(self, button):
+		self.model.cycle_waterfall_avg()
 		self.controller.change_to_settings()
 
 	def render(self, screen):
@@ -314,7 +340,7 @@ class SettingsList(ViewBase):
 
 	def gain_click(self, button):
 		self.controller.number_dialog('GAIN:', 'dB',
-			initial=self.model.get_gain(), accept=self.gain_accept, 
+			initial=self.model.get_gain(), accept=self.gain_accept,
 			has_auto=True)
 
 	def gain_accept(self, value):
@@ -324,7 +350,7 @@ class SettingsList(ViewBase):
 
 	def min_click(self, button):
 		self.controller.number_dialog('MIN:', 'dB',
-			initial=self.model.get_min_string(), accept=self.min_accept, 
+			initial=self.model.get_min_string(), accept=self.min_accept,
 			has_auto=True, allow_negative=True)
 
 	def min_accept(self, value):
@@ -334,7 +360,7 @@ class SettingsList(ViewBase):
 
 	def max_click(self, button):
 		self.controller.number_dialog('MAX:', 'dB',
-			initial=self.model.get_max_string(), accept=self.max_accept, 
+			initial=self.model.get_max_string(), accept=self.max_accept,
 			has_auto=True, allow_negative=True)
 
 	def max_accept(self, value):
@@ -347,7 +373,7 @@ class SpectrogramBase(ViewBase):
 	"""Base class for a spectrogram view."""
 
 	def __init__(self, model, controller):
-		self.model      = model
+		self.model = model
 		self.controller = controller
 		self.buttons = ui.ButtonGrid(model.width, model.height, 4, 5)
 		self.buttons.add(0, 0, 'TUNE', click=self.controller.change_to_settings)
@@ -371,91 +397,91 @@ class SpectrogramBase(ViewBase):
 		"""
 		x += 5
 		y = self.model.height - self.buttons.row_size + padding
-		pygame.draw.lines(screen, freqshow.BUTTON_FG, False, 
-			[(x, y), (x-size, y+size), (x+size, y+size), (x, y), (x, y+2*size)])
+		pygame.draw.lines(screen, freqshow.BUTTON_FG, False,
+			[(x, y), (x - size, y + size), (x + size, y + size), (x, y), (x, y + 2 * size)])
 
 	def render(self, screen):
-			# Clear screen.
-			screen.fill(freqshow.MAIN_BG)
+		# Clear screen.
+		screen.fill(freqshow.MAIN_BG)
 
-			if self.overlay_enabled:
-					# Draw the spectrogram full-screen first so it appears behind buttons.
-					self.render_spectrogram(screen)
+		if self.overlay_enabled:
+			# Draw the spectrogram full-screen first so it appears behind buttons.
+			self.render_spectrogram(screen)
 
-					# Draw frequencies in bottom row.
-					bottom_row = (
-							0,
-							self.model.height - self.buttons.row_size,
-							self.model.width,
-							self.buttons.row_size,
-					)
-					freq = self.model.get_center_freq()
-					bandwidth = self.model.get_sample_rate()
+			# Draw frequencies in bottom row.
+			bottom_row = (
+				0,
+				self.model.height - self.buttons.row_size,
+				self.model.width,
+				self.buttons.row_size,
+			)
+			freq = self.model.get_center_freq()
+			bandwidth = self.model.get_sample_rate()
 
-					# Render minimum frequency on left.
-					label = ui.render_text(
-							'{0:0.2f} Mhz'.format(freq - bandwidth / 2.0),
-							size=freqshow.MAIN_FONT
-					)
-					screen.blit(label, ui.align(label.get_rect(), bottom_row,
-							horizontal=ui.ALIGN_LEFT))
+			# Render minimum frequency on left.
+			label = ui.render_text(
+				'{0:0.2f} Mhz'.format(freq - bandwidth / 2.0),
+				size=freqshow.MAIN_FONT
+			)
+			screen.blit(label, ui.align(label.get_rect(), bottom_row,
+				horizontal=ui.ALIGN_LEFT))
 
-					# Render center frequency in center.
-					label = ui.render_text(
-							'{0:0.2f} Mhz'.format(freq),
-							size=freqshow.MAIN_FONT
-					)
-					screen.blit(label, ui.align(label.get_rect(), bottom_row,
-							horizontal=ui.ALIGN_CENTER))
+			# Render center frequency in center.
+			label = ui.render_text(
+				'{0:0.2f} Mhz'.format(freq),
+				size=freqshow.MAIN_FONT
+			)
+			screen.blit(label, ui.align(label.get_rect(), bottom_row,
+				horizontal=ui.ALIGN_CENTER))
 
-					# Render maximum frequency on right.
-					label = ui.render_text(
-							'{0:0.2f} Mhz'.format(freq + bandwidth / 2.0),
-							size=freqshow.MAIN_FONT
-					)
-					screen.blit(label, ui.align(label.get_rect(), bottom_row,
-							horizontal=ui.ALIGN_RIGHT))
+			# Render maximum frequency on right.
+			label = ui.render_text(
+				'{0:0.2f} Mhz'.format(freq + bandwidth / 2.0),
+				size=freqshow.MAIN_FONT
+			)
+			screen.blit(label, ui.align(label.get_rect(), bottom_row,
+				horizontal=ui.ALIGN_RIGHT))
 
-					# Render min intensity in bottom left.
-					label = ui.render_text(
-							'{0:0.0f} dB'.format(self.model.min_intensity),
-							size=freqshow.MAIN_FONT
-					)
-					screen.blit(label, ui.align(label.get_rect(), screen.get_rect(),
-							horizontal=ui.ALIGN_LEFT, vertical=ui.ALIGN_BOTTOM))
+			# Render min intensity in bottom left.
+			label = ui.render_text(
+				'{0:0.0f} dB'.format(self.model.min_intensity),
+				size=freqshow.MAIN_FONT
+			)
+			screen.blit(label, ui.align(label.get_rect(), screen.get_rect(),
+				horizontal=ui.ALIGN_LEFT, vertical=ui.ALIGN_BOTTOM))
 
-					# Render max intensity in top left.
-					label = ui.render_text(
-							'{0:0.0f} dB'.format(self.model.max_intensity),
-							size=freqshow.MAIN_FONT
-					)
-					screen.blit(label, ui.align(label.get_rect(), screen.get_rect(),
-							horizontal=ui.ALIGN_LEFT, vertical=ui.ALIGN_TOP))
+			# Render max intensity in top left.
+			label = ui.render_text(
+				'{0:0.0f} dB'.format(self.model.max_intensity),
+				size=freqshow.MAIN_FONT
+			)
+			screen.blit(label, ui.align(label.get_rect(), screen.get_rect(),
+				horizontal=ui.ALIGN_LEFT, vertical=ui.ALIGN_TOP))
 
-					# Draw the buttons last so they float over the waterfall.
-					self.buttons.render(screen)
-			else:
-					# Draw fullscreen spectrogram.
-					self.render_spectrogram(screen)
+			# Draw the buttons last so they float over the waterfall.
+			self.buttons.render(screen)
+		else:
+			# Draw fullscreen spectrogram.
+			self.render_spectrogram(screen)
 
 	def click(self, location):
-			mx, my = location
+		mx, my = location
 
-			# If the click is inside the top button row, let buttons handle it.
-			if my <= self.buttons.row_size:
-					self.buttons.click(location)
-					return
+		# If the click is inside the top button row, let buttons handle it.
+		if my <= self.buttons.row_size:
+			self.buttons.click(location)
+			return
 
-			# Otherwise, tune to the tapped frequency.
-			width = self.model.width
-			center = self.model.get_center_freq()
-			sample_rate = self.model.get_sample_rate()
+		# Otherwise, tune to the tapped frequency.
+		width = self.model.width
+		center = self.model.get_center_freq()
+		sample_rate = self.model.get_sample_rate()
 
-			left_freq = center - (sample_rate / 2.0)
-			tapped_freq = left_freq + (float(mx) / float(width)) * sample_rate
+		left_freq = center - (sample_rate / 2.0)
+		tapped_freq = left_freq + (float(mx) / float(width)) * sample_rate
 
-			self.model.set_center_freq(tapped_freq)
-			# self.controller.waterfall.clear_waterfall()
+		self.model.set_center_freq(tapped_freq)
+		# self.controller.waterfall.clear_waterfall()
 
 	def quit_click(self, button):
 		self.controller.message_dialog('QUIT: Are you sure?',
@@ -466,82 +492,89 @@ class SpectrogramBase(ViewBase):
 
 
 class WaterfallSpectrogram(SpectrogramBase):
-        """Scrolling waterfall plot of spectrogram data."""
+	"""Scrolling waterfall plot of spectrogram data."""
 
-        def __init__(self, model, controller):
-                super(WaterfallSpectrogram, self).__init__(model, controller)
-                self.color_func = gradient_func(freqshow.WATERFALL_GRAD)
-                self.waterfall = pygame.Surface((model.width, model.height))
-                self.last_waterfall_update = 0.0
+	def __init__(self, model, controller):
+		super(WaterfallSpectrogram, self).__init__(model, controller)
+		self.color_func = gradient_func(freqshow.WATERFALL_GRAD)
+		self.waterfall = pygame.Surface((model.width, model.height))
+		self.last_waterfall_update = 0.0
 
-        def clear_waterfall(self):
-                self.waterfall.fill(freqshow.MAIN_BG)
+	def clear_waterfall(self):
+		self.waterfall.fill(freqshow.MAIN_BG)
 
-        def render_spectrogram(self, screen):
-                now = time.time()
-                interval = self.model.get_waterfall_speed_interval()
-                scroll_px = self.model.get_waterfall_scroll_pixels()
+	def render_spectrogram(self, screen):
+		now = time.time()
+		interval = self.model.get_waterfall_speed_interval()
+		scroll_px = self.model.get_waterfall_scroll_pixels()
 
-                x, y, width, height = screen.get_rect()
-                offset = 0
+		x, y, width, height = screen.get_rect()
+		offset = 0
 
-                if now - self.last_waterfall_update >= interval:
-                        # Grab real spectrogram data.
-                        freqs = self.model.get_data()
+		if now - self.last_waterfall_update >= interval:
+			# Grab real spectrogram data.
+			freqs = self.model.get_data()
 
-                        # Scroll the existing waterfall image down by multiple pixels.
-                        self.waterfall.scroll(0, scroll_px)
+			# Scroll the existing waterfall image down by multiple pixels.
+			self.waterfall.scroll(0, scroll_px)
 
-                        # Scale the FFT values to the range 0 to 1.
-                        freqs = (freqs - self.model.min_intensity) / self.model.range
+			# Scale the FFT values to the range 0 to 1.
+			freqs = (freqs - self.model.min_intensity) / self.model.range
 
-                        # Draw the newest FFT row into all newly exposed rows.
-                        self.waterfall.lock()
-                        for i in range(width):
-                                power = clamp(freqs[i], 0.0, 1.0)
-                                new_color = self.color_func(power)
+			# Draw the newest FFT row into all newly exposed rows.
+			avg_rows = self.model.get_waterfall_avg_rows()
+			avg_alpha = self.model.get_waterfall_avg_alpha()
 
-                                old_sample_y = min(scroll_px, height - 1)
-                                old_color = self.waterfall.get_at((i, old_sample_y))[:3]
+			self.waterfall.lock()
+			for i in range(width):
+				power = clamp(freqs[i], 0.0, 1.0)
+				new_color = self.color_func(power)
 
-                                for row in range(scroll_px):
-                                        if row >= height:
-                                                break
-                                        t = row / float(max(1, scroll_px - 1))
-                                        blended = lerp_color(new_color, old_color, t * 0.1)
-                                        self.waterfall.set_at((i, row), blended)
-                        self.waterfall.unlock()
+				history_colors = []
+				for dy in avg_rows:
+					sy = min(scroll_px + dy - 1, height - 1)
+					history_colors.append(self.waterfall.get_at((i, sy))[:3])
 
-                        self.last_waterfall_update = now
+				history_color = average_colors(history_colors) if history_colors else new_color
 
-                screen.blit(self.waterfall, (0, 0), area=(0, offset, width, height))
+				for row in range(scroll_px):
+					if row >= height:
+						break
+					pixel = lerp_color(new_color, history_color, avg_alpha)
+					self.waterfall.set_at((i, row), pixel)
+			self.waterfall.unlock()
 
-                # Draw 1px red center line.
-                center_x = (width // 2) + CENTER_LINE_OFFSET_PX
-                pygame.draw.line(screen, (255, 0, 0), (center_x, 0), (center_x, height - 1), 1)
+			self.last_waterfall_update = now
+
+		screen.blit(self.waterfall, (0, 0), area=(0, offset, width, height))
+
+		# Draw 1px red center line.
+		center_x = (width // 2) + CENTER_LINE_OFFSET_PX
+		pygame.draw.line(screen, (255, 0, 0), (center_x, 0), (center_x, height - 1), 1)
+
 
 class InstantSpectrogram(SpectrogramBase):
-        """Instantaneous point in time line plot of the spectrogram."""
+	"""Instantaneous point in time line plot of the spectrogram."""
 
-        def __init__(self, model, controller):
-                super(InstantSpectrogram, self).__init__(model, controller)
+	def __init__(self, model, controller):
+		super(InstantSpectrogram, self).__init__(model, controller)
 
-        def render_spectrogram(self, screen):
-                # Grab spectrogram data.
-                freqs = self.model.get_data()
-                # Scale frequency values to fit on the screen based on the min and max
-                # intensity values.
-                x, y, width, height = screen.get_rect()
-                freqs = height-np.floor(((freqs-self.model.min_intensity)/self.model.range)*height)
-                # Render frequency graph.
-                screen.fill(freqshow.MAIN_BG)
-                # Draw line segments to join each FFT result bin.
-                ylast = freqs[0]
-                for i in range(1, min(width, len(freqs))):
-                        y = freqs[i]
-                        pygame.draw.line(screen, freqshow.INSTANT_LINE, (i-1, ylast), (i, y))
-                        ylast = y
+	def render_spectrogram(self, screen):
+		# Grab spectrogram data.
+		freqs = self.model.get_data()
+		# Scale frequency values to fit on the screen based on the min and max
+		# intensity values.
+		x, y, width, height = screen.get_rect()
+		freqs = height - np.floor(((freqs - self.model.min_intensity) / self.model.range) * height)
+		# Render frequency graph.
+		screen.fill(freqshow.MAIN_BG)
+		# Draw line segments to join each FFT result bin.
+		ylast = freqs[0]
+		for i in range(1, min(width, len(freqs))):
+			y = freqs[i]
+			pygame.draw.line(screen, freqshow.INSTANT_LINE, (i - 1, ylast), (i, y))
+			ylast = y
 
-                # Draw 1px red center line.
-                center_x = (width // 2) + CENTER_LINE_OFFSET_PX
-                pygame.draw.line(screen, (255, 0, 0), (center_x, 0), (center_x, height - 1), 1)
+		# Draw 1px red center line.
+		center_x = (width // 2) + CENTER_LINE_OFFSET_PX
+		pygame.draw.line(screen, (255, 0, 0), (center_x, 0), (center_x, height - 1), 1)
