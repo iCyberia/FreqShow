@@ -51,19 +51,19 @@ class FreqShowModel(object):
                 self.set_center_freq(99.5)
                 self.set_sample_rate(2.4)
                 self.set_gain(10)
-                self.waterfall_speed_index = 3
+                self.waterfall_speed_index = 1
                 self.waterfall_speed_labels = ['SLOW', 'MED', 'FAST', 'MAX']
-                self.waterfall_speed_divisors = [1.0, 1.0 / 3.0, 0.1, 0.05]
+                self.waterfall_speed_intervals = [1.0, 1.0 / 3.0, 0.1, 0.05]
 
         def get_waterfall_speed_label(self):
                 return self.waterfall_speed_labels[self.waterfall_speed_index]
-
+        
         def get_waterfall_speed_interval(self):
                 return self.waterfall_speed_intervals[self.waterfall_speed_index]
-
+        
         def cycle_waterfall_speed(self):
                 self.waterfall_speed_index = (self.waterfall_speed_index + 1) % len(self.waterfall_speed_labels)
-
+        
 
         def _clear_intensity(self):
                 if self.min_auto_scale:

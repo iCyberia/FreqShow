@@ -109,6 +109,7 @@ class MessageDialog(ViewBase):
 			fg=freqshow.BUTTON_FG, bg=freqshow.MAIN_BG)
 		self.label_rect = ui.align(self.label.get_rect(),
 			(0, 0, model.width, model.height))
+		self.model.get_waterfall_speed_divisor()
 
 	def render(self, screen):
 		# Draw background, buttons, and text.
@@ -440,6 +441,7 @@ class WaterfallSpectrogram(SpectrogramBase):
                 self.color_func = gradient_func(freqshow.WATERFALL_GRAD)
                 self.waterfall = pygame.Surface((model.width, model.height))
                 self.last_waterfall_update = 0.0
+				
 
         def clear_waterfall(self):
                 self.waterfall.fill(freqshow.MAIN_BG)
