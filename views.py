@@ -115,7 +115,7 @@ class MessageDialog(ViewBase):
 			fg=freqshow.BUTTON_FG, bg=freqshow.MAIN_BG)
 		self.label_rect = ui.align(self.label.get_rect(),
 			(0, 0, model.width, model.height))
-		self.model.get_waterfall_speed_divisor()
+		
 
 	def render(self, screen):
 		# Draw background, buttons, and text.

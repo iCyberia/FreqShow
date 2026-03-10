@@ -54,7 +54,7 @@ class FreqShowModel(object):
                 self.waterfall_speed_index = 1
                 self.waterfall_speed_labels = ['SLOW', 'MED', 'FAST', 'MAX']
                 self.waterfall_speed_intervals = [0.1, 1.0 / 30.0, 0.01, 1.0 / 300.0]
-                self.waterfall_scroll_pixels = [1, 2, 4, 8]
+                self.waterfall_scroll_pixels = [1, 1, 2, 3]
 
         def get_waterfall_speed_label(self):
                 return self.waterfall_speed_labels[self.waterfall_speed_index]
