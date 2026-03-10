@@ -353,7 +353,7 @@ class SpectrogramBase(ViewBase):
 		self.buttons.add(0, 0, 'TUNE', click=self.controller.change_to_settings)
 		self.buttons.add(1, 0, 'SWITCH MODE', click=self.controller.toggle_main, colspan=2)
 		self.buttons.add(3, 0, 'FIND', click=self.find_click,
-			bg_color=freqshow.CANCEL_BG)
+			bg_color=freqshow.BUTTON_BG)
 		self.overlay_enabled = True
 
 	def find_click(self, pos):
