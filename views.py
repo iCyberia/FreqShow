@@ -454,7 +454,7 @@ class WaterfallSpectrogram(SpectrogramBase):
         def render_spectrogram(self, screen):
                 now = time.time()
                 interval = self.model.get_waterfall_speed_interval()
-                scroll_px = 1
+                scroll_px = self.model.get_waterfall_scroll_pixels()
 
                 x, y, width, height = screen.get_rect()
                 offset = 0
