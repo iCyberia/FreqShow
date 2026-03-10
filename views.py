@@ -259,6 +259,8 @@ class SettingsList(ViewBase):
 		gain_text       = 'GAIN: {0} dB'.format(model.get_gain())
 		min_text        = 'MIN: {0} dB'.format(model.get_min_string())
 		max_text        = 'MAX: {0} dB'.format(model.get_max_string())
+		wf_text = 'WF SPEED: {0}'.format(model.get_waterfall_speed_label())
+
 		# Create buttons.
 		self.buttons = ui.ButtonGrid(model.width, model.height, 4, 5)
 		self.buttons.add(0, 0, centerfreq_text, colspan=4, click=self.centerfreq_click)
@@ -267,6 +269,11 @@ class SettingsList(ViewBase):
 		self.buttons.add(0, 3, min_text,        colspan=2, click=self.min_click)
 		self.buttons.add(2, 3, max_text,        colspan=2, click=self.max_click)
 		self.buttons.add(0, 4, 'BACK', click=self.controller.change_to_main)
+		self.buttons.add(1, 4, wf_text, colspan=3, click=self.waterfall_speed_click)
+
+	def waterfall_speed_click(self, button):
+		self.model.cycle_waterfall_speed()
+		self.controller.change_to_settings()
 
 	def render(self, screen):
 		# Clear view and render buttons.
@@ -431,34 +438,43 @@ class WaterfallSpectrogram(SpectrogramBase):
                 super(WaterfallSpectrogram, self).__init__(model, controller)
                 self.color_func = gradient_func(freqshow.WATERFALL_GRAD)
                 self.waterfall = pygame.Surface((model.width, model.height))
+                self.waterfall_frame_counter = 0
 
         def clear_waterfall(self):
                 self.waterfall.fill(freqshow.MAIN_BG)
 
         def render_spectrogram(self, screen):
-                # Grab spectrogram data.
-                freqs = self.model.get_data()
-                # Scroll up the waterfall display.
-                self.waterfall.scroll(0, 1)
-                # Scale the FFT values to the range 0 to 1.
-                freqs = (freqs-self.model.min_intensity)/self.model.range
-                # Convert scaled values to pixels drawn at the bottom of the display.
+                self.waterfall_frame_counter += 1
+                divisor = self.model.get_waterfall_speed_divisor()
+        
+                # Get screen dimensions either way so we can always blit the current waterfall.
                 x, y, width, height = screen.get_rect()
-                wx, wy, wwidth, wheight = self.waterfall.get_rect()
                 offset = 0
-                # Draw FFT values mapped through the gradient function to a color.
-                self.waterfall.lock()
-                for i in range(width):
-                        power = clamp(freqs[i], 0.0, 1.0)
-                        self.waterfall.set_at((i, 0), self.color_func(power))
-
-                self.waterfall.unlock()
+        
+                # Only add a new waterfall row when the selected speed interval says to.
+                if self.waterfall_frame_counter % divisor == 0:
+                        # Grab spectrogram data.
+                        freqs = self.model.get_data()
+        
+                        # Scroll the existing waterfall image.
+                        self.waterfall.scroll(0, 1)
+        
+                        # Scale the FFT values to the range 0 to 1.
+                        freqs = (freqs - self.model.min_intensity) / self.model.range
+        
+                        # Draw FFT values mapped through the gradient function to a color.
+                        self.waterfall.lock()
+                        for i in range(width):
+                                power = clamp(freqs[i], 0.0, 1.0)
+                                self.waterfall.set_at((i, 0), self.color_func(power))
+                        self.waterfall.unlock()
+        
+                # Always draw the current waterfall image to the screen.
                 screen.blit(self.waterfall, (0, 0), area=(0, offset, width, height))
-
+        
                 # Draw 1px red center line.
                 center_x = (width // 2) + CENTER_LINE_OFFSET_PX
                 pygame.draw.line(screen, (255, 0, 0), (center_x, 0), (center_x, height - 1), 1)
-
 
 class InstantSpectrogram(SpectrogramBase):
         """Instantaneous point in time line plot of the spectrogram."""
