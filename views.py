@@ -449,32 +449,32 @@ class WaterfallSpectrogram(SpectrogramBase):
         def render_spectrogram(self, screen):
                 now = time.time()
                 interval = self.model.get_waterfall_speed_interval()
+                scroll_px = self.model.get_waterfall_scroll_pixels()
         
-                # Get screen dimensions either way so we can always blit the current waterfall.
                 x, y, width, height = screen.get_rect()
                 offset = 0
         
-                # Only add a new waterfall row when enough time has passed.
                 if now - self.last_waterfall_update >= interval:
-                        # Grab spectrogram data.
                         freqs = self.model.get_data()
         
-                        # Scroll the existing waterfall image.
-                        self.waterfall.scroll(0, 1)
+                        # Scroll the existing waterfall image down by multiple pixels.
+                        self.waterfall.scroll(0, scroll_px)
         
                         # Scale the FFT values to the range 0 to 1.
                         freqs = (freqs - self.model.min_intensity) / self.model.range
         
-                        # Draw FFT values mapped through the gradient function to a color.
+                        # Draw the newest FFT row into all newly exposed rows.
                         self.waterfall.lock()
-                        for i in range(width):
-                                power = clamp(freqs[i], 0.0, 1.0)
-                                self.waterfall.set_at((i, 0), self.color_func(power))
+                        for row in range(scroll_px):
+                                if row >= height:
+                                        break
+                                for i in range(width):
+                                        power = clamp(freqs[i], 0.0, 1.0)
+                                        self.waterfall.set_at((i, row), self.color_func(power))
                         self.waterfall.unlock()
         
                         self.last_waterfall_update = now
         
-                # Always draw the current waterfall image to the screen.
                 screen.blit(self.waterfall, (0, 0), area=(0, offset, width, height))
         
                 # Draw 1px red center line.
