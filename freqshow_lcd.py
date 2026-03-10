@@ -247,6 +247,7 @@ def main() -> None:
             last_fps_poll = 0.0
             fps_text = "-- FPS"
             render_ms = 0.0
+            lcd_ms = 0.0
 
             while running:
                 for event in pygame.event.get():
@@ -279,7 +280,7 @@ def main() -> None:
                     last_temp_poll = now_time
 
                 if now_time - last_fps_poll >= 0.5:
-                    fps_text = f"{clock.get_fps():.0f} FPS {render_ms:.0f}ms"
+                    fps_text = f"{clock.get_fps():.0f} FPS R:{render_ms:.0f} L:{lcd_ms:.0f}"
                     last_fps_poll = now_time
 
                 render_start = time.time()
@@ -295,7 +296,9 @@ def main() -> None:
                 pygame.display.flip()
 
                 if now_time - last_lcd_update >= lcd_update_interval:
+                    lcd_start = time.time()
                     present_to_lcd(lcd, screen)
+                    lcd_ms = (time.time() - lcd_start) * 1000.0
                     last_lcd_update = now_time
 
                 clock.tick(240)
