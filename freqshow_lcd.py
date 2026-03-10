@@ -153,7 +153,7 @@ def draw_error_screen(screen: pygame.Surface, error_text: str) -> None:
     width, height = screen.get_size()
 
     font_title = pygame.font.Font(None, 36)
-    font_body = pygame.font.Font(None, 24)
+    font_body = pygame.font.Font(None, 22)
 
     title = font_title.render("Startup Error", True, (255, 80, 80))
     title_rect = title.get_rect(center=(width // 2, height // 4))
