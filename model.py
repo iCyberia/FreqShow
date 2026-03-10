@@ -79,22 +79,19 @@ class FreqShowModel(object):
 
                 if settings.get("center_freq") is not None:
                         self.center_freq = settings["center_freq"]
-
                 if settings.get("sample_rate") is not None:
                         self.sample_rate = settings["sample_rate"]
-
                 if settings.get("gain") is not None:
                         self.gain = settings["gain"]
-
                 if settings.get("min_intensity") is not None:
                         self.min_intensity = settings["min_intensity"]
-
                 if settings.get("max_intensity") is not None:
                         self.max_intensity = settings["max_intensity"]
-
                 if settings.get("waterfall_speed_index") is not None:
                         self.waterfall_speed_index = settings["waterfall_speed_index"]
-
+                if settings.get("waterfall_avg_index") is not None:
+                        self.waterfall_avg_index = settings["waterfall_avg_index"]
+                        
                 # Apply the settings.
                 if self.min_intensity is not None:
                         self.set_min_intensity(self.min_intensity)
@@ -109,12 +106,15 @@ class FreqShowModel(object):
                 self.set_gain(self.gain)
                 self.waterfall_avg_index = settings.get('waterfall_avg_index', self.waterfall_avg_index)
 
-        def load_settings(self):
-                try:
-                        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
-                                settings = json.load(f)
-                except Exception:
-                        settings = {}
+                def load_settings(self):
+                        try:
+                                with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+                                        settings = json.load(f)
+                                        if not isinstance(settings, dict):
+                                                return {}
+                                        return settings
+                        except Exception:
+                                return {}
 
                 self.center_freq = settings.get("center_freq", self.center_freq)
                 self.sample_rate = settings.get("sample_rate", self.sample_rate)
