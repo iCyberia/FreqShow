@@ -117,13 +117,13 @@ class Button(object):
 			screen.blit(border_surface, rect.topleft)
 
 			# Subtle top highlight for a more modern surface feel.
-			highlight_rect = pygame.Rect(x + 1, y + 1, max(1, width - 2), max(1, height // 3))
-			highlight_color = (
-					min(self.bg_color[0] + 18, 255),
-					min(self.bg_color[1] + 18, 255),
-					min(self.bg_color[2] + 18, 255),
-			)
-			pygame.draw.rect(screen, highlight_color, highlight_rect, border_radius=radius)
+			# highlight_rect = pygame.Rect(x + 1, y + 1, max(1, width - 2), max(1, height // 3))
+			# highlight_color = (
+			# 		min(self.bg_color[0] + 18, 255),
+			# 		min(self.bg_color[1] + 18, 255),
+			# 		min(self.bg_color[2] + 18, 255),
+			# )
+			# pygame.draw.rect(screen, highlight_color, highlight_rect, border_radius=radius)
 
 			screen.blit(self.label, self.label_pos)
 
