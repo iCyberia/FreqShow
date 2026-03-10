@@ -22,16 +22,18 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import json
+import os
+
 import numpy as np
 from rtlsdr import *
 
 import freqshow
-import json
-import os
 
 CENTER_OFFSET_MHZ = 0.010
 DISPLAY_OFFSET_MHZ = 0.07
 SETTINGS_FILE = os.path.expanduser("~/FreqShow/freqshow_settings.json")
+
 
 class FreqShowModel(object):
         def __init__(self, width, height):
@@ -50,7 +52,7 @@ class FreqShowModel(object):
                 self.sdr = RtlSdr()
                 self.sdr.offset_tuning = False
                 self.sdr.freq_correction = 31
-                self.tune_offset_hz = 000000.0
+                self.tune_offset_hz = 0.0
 
                 # Default startup values.
                 self.waterfall_speed_index = 1
@@ -58,21 +60,23 @@ class FreqShowModel(object):
                 self.waterfall_speed_intervals = [0.1, 1.0 / 30.0, 0.01, 1.0 / 300.0]
                 self.waterfall_scroll_pixels = [1, 2, 4, 8]
 
-                self.center_freq = 99.5
-                self.sample_rate = 2.4
-                self.gain = 10
-                self.min_intensity = -3
-                self.max_intensity = 50
-
                 self.waterfall_avg_index = 1
                 self.waterfall_avg_labels = ['OFF', 'LOW', 'MED', 'HIGH']
                 self.waterfall_avg_row_sets = [
-                [],
-                [1, 2, 3],
-                [1, 2, 3, 4, 5],
-                [1, 2, 3, 4, 5, 6, 7, 8, 9],
+                        [],
+                        [1, 2, 3],
+                        [1, 2, 3, 4, 5],
+                        [1, 2, 3, 4, 5, 6, 7, 8, 9],
                 ]
                 self.waterfall_avg_alphas = [0.0, 0.18, 0.30, 0.42]
+
+                self.center_freq = 99.5
+                self.sample_rate = 2.4
+                self.gain = 10
+                self.auto_gain = False
+                self.min_intensity = -3
+                self.max_intensity = 50
+                self.range = self.max_intensity - self.min_intensity
 
                 # Load saved settings, if any.
                 settings = self.load_settings()
@@ -83,46 +87,42 @@ class FreqShowModel(object):
                         self.sample_rate = settings["sample_rate"]
                 if settings.get("gain") is not None:
                         self.gain = settings["gain"]
+                        self.auto_gain = (self.gain == 'AUTO')
                 if settings.get("min_intensity") is not None:
                         self.min_intensity = settings["min_intensity"]
+                        self.min_auto_scale = False
                 if settings.get("max_intensity") is not None:
                         self.max_intensity = settings["max_intensity"]
+                        self.max_auto_scale = False
                 if settings.get("waterfall_speed_index") is not None:
                         self.waterfall_speed_index = settings["waterfall_speed_index"]
                 if settings.get("waterfall_avg_index") is not None:
                         self.waterfall_avg_index = settings["waterfall_avg_index"]
-                        
+
                 # Apply the settings.
                 if self.min_intensity is not None:
                         self.set_min_intensity(self.min_intensity)
                 else:
-                        self.set_min_intensity(-3)
+                        self.set_min_intensity('AUTO')
+
                 if self.max_intensity is not None:
                         self.set_max_intensity(self.max_intensity)
                 else:
-                        self.set_max_intensity(50)
+                        self.set_max_intensity('AUTO')
+
                 self.set_center_freq(self.center_freq)
                 self.set_sample_rate(self.sample_rate)
                 self.set_gain(self.gain)
-                self.waterfall_avg_index = settings.get('waterfall_avg_index', self.waterfall_avg_index)
 
-                def load_settings(self):
-                        try:
-                                with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
-                                        settings = json.load(f)
-                                        if not isinstance(settings, dict):
-                                                return {}
-                                        return settings
-                        except Exception:
-                                return {}
-
-                self.center_freq = settings.get("center_freq", self.center_freq)
-                self.sample_rate = settings.get("sample_rate", self.sample_rate)
-                self.gain = settings.get("gain", self.gain)
-                self.min_intensity = settings.get("min_intensity", self.min_intensity)
-                self.max_intensity = settings.get("max_intensity", self.max_intensity)
-                self.waterfall_speed_index = settings.get("waterfall_speed_index", self.waterfall_speed_index)
-                self.waterfall_avg_index = settings.get("waterfall_avg_index", self.waterfall_avg_index)
+        def load_settings(self):
+                try:
+                        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+                                settings = json.load(f)
+                                if not isinstance(settings, dict):
+                                        return {}
+                                return settings
+                except Exception:
+                        return {}
 
         def save_settings(self):
                 settings = {
@@ -137,21 +137,19 @@ class FreqShowModel(object):
                 with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
                         json.dump(settings, f)
 
-
-
         def get_waterfall_speed_label(self):
                 return self.waterfall_speed_labels[self.waterfall_speed_index]
-        
+
         def get_waterfall_speed_interval(self):
                 return self.waterfall_speed_intervals[self.waterfall_speed_index]
-        
+
         def cycle_waterfall_speed(self):
                 self.waterfall_speed_index = (self.waterfall_speed_index + 1) % len(self.waterfall_speed_labels)
                 self.save_settings()
 
         def get_waterfall_scroll_pixels(self):
                 return self.waterfall_scroll_pixels[self.waterfall_speed_index]
-        
+
         def get_waterfall_avg_label(self):
                 return self.waterfall_avg_labels[self.waterfall_avg_index]
 
@@ -205,7 +203,6 @@ class FreqShowModel(object):
 
                         peak_index = int(np.argmax(search))
 
-                        # Quadratic interpolation using peak bin and neighbors.
                         if 1 <= peak_index < len(smoothed) - 1:
                                 y1 = smoothed[peak_index - 1]
                                 y2 = smoothed[peak_index]
@@ -224,7 +221,6 @@ class FreqShowModel(object):
                         freq_offset_mhz = (bin_offset * bin_hz) / 1000000.0
                         return freq_offset_mhz, peak_index, refined_index
 
-                # Pass 1: coarse
                 smoothed = get_smoothed_spectrum()
                 freq_offset_mhz, peak_index, refined_index = find_peak_offset_mhz(smoothed)
                 new_freq = self.get_center_freq() + freq_offset_mhz
@@ -235,7 +231,6 @@ class FreqShowModel(object):
                 )
                 self.set_center_freq(new_freq)
 
-                # Pass 2: fine
                 smoothed = get_smoothed_spectrum()
                 freq_offset_mhz, peak_index, refined_index = find_peak_offset_mhz(smoothed)
                 new_freq = self.get_center_freq() + freq_offset_mhz
@@ -246,11 +241,9 @@ class FreqShowModel(object):
                 )
                 self.set_center_freq(new_freq)
 
-
-
         def get_center_freq(self):
                 """Return requested center frequency of tuner in megahertz."""
-                return self.sdr.get_center_freq()/1000000.0
+                return self.sdr.get_center_freq() / 1000000.0
 
         def set_center_freq(self, freq_mhz):
                 """Set tuner center frequency to provided megahertz value."""
@@ -269,7 +262,7 @@ class FreqShowModel(object):
 
         def get_sample_rate(self):
                 """Return sample rate of tuner in megahertz."""
-                return self.sdr.get_sample_rate()/1000000.0
+                return self.sdr.get_sample_rate() / 1000000.0
 
         def set_sample_rate(self, sample_rate_mhz):
                 """Set tuner sample rate to provided frequency in megahertz."""
@@ -351,44 +344,29 @@ class FreqShowModel(object):
                 """Get spectrogram data from the tuner. Will return width number of
                 values which are the intensities of each frequency bucket.
                 """
-                # Read a large block of samples from the SDR.
                 samples = self.sdr.read_samples(freqshow.SDR_SAMPLE_SIZE)
-
-                # Run FFT on the full sample block.
                 freqs = np.absolute(np.fft.fft(samples))
-
-                # Shift FFT result positions to put center frequency in center.
                 freqs = np.fft.fftshift(freqs)
 
-                # Apply display-only offset so the visual peak lands under the center marker.
                 bin_hz = self.sdr.get_sample_rate() / len(freqs)
                 offset_bins = int(round((DISPLAY_OFFSET_MHZ * 1000000.0) / bin_hz))
                 freqs = np.roll(freqs, -offset_bins)
 
-                # Compress the FFT down to the display width by averaging bins.
                 bins_per_pixel = len(freqs) // self.width
                 if bins_per_pixel > 1:
-                                freqs = freqs[:bins_per_pixel * self.width]
-                                freqs = freqs.reshape(self.width, bins_per_pixel).mean(axis=1)
+                        freqs = freqs[:bins_per_pixel * self.width]
+                        freqs = freqs.reshape(self.width, bins_per_pixel).mean(axis=1)
                 else:
-                                freqs = freqs[:self.width]
+                        freqs = freqs[:self.width]
 
-                # Convert to decibels.
                 freqs = 20.0 * np.log10(freqs + 1e-12)
 
-                # Update model's min and max intensities when auto scaling each value.
                 if self.min_auto_scale:
-                                min_intensity = np.min(freqs)
-                                self.min_intensity = min_intensity if self.min_intensity is None \
-                                                else min(min_intensity, self.min_intensity)
+                        min_intensity = np.min(freqs)
+                        self.min_intensity = min_intensity if self.min_intensity is None else min(min_intensity, self.min_intensity)
                 if self.max_auto_scale:
-                                max_intensity = np.max(freqs)
-                                self.max_intensity = max_intensity if self.max_intensity is None \
-                                                else max(max_intensity, self.max_intensity)
+                        max_intensity = np.max(freqs)
+                        self.max_intensity = max_intensity if self.max_intensity is None else max(max_intensity, self.max_intensity)
 
-                # Update intensity range.
                 self.range = self.max_intensity - self.min_intensity
-
                 return freqs
-
-        
