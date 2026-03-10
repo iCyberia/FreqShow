@@ -225,7 +225,7 @@ class FreqShowModel(object):
                         self.sdr.set_center_freq(tuned_hz)
                         actual = self.sdr.get_center_freq() / 1000000.0
                         print(f"SET FREQ requested={freq_mhz} actual_tuned={actual}", flush=True)
-
+                        self.save_settings()
                         for _ in range(3):
                                 self.sdr.read_samples(256 * 1024)
 
