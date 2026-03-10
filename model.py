@@ -224,11 +224,11 @@ class FreqShowModel(object):
                         tuned_hz = freq_mhz * 1000000.0
                         self.sdr.set_center_freq(tuned_hz)
                         actual = self.sdr.get_center_freq() / 1000000.0
-                        print(f"SET FREQ requested={freq_mhz} actual_tuned={actual}", flush=True)
+                        self.center_freq = actual
                         self.save_settings()
+                        print(f"SET FREQ requested={freq_mhz} actual_tuned={actual}", flush=True)
                         for _ in range(3):
                                 self.sdr.read_samples(256 * 1024)
-
                         self._clear_intensity()
                 except Exception as e:
                         print(f"SET FREQ FAILED requested={freq_mhz} error={e}", flush=True)
