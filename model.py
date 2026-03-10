@@ -58,7 +58,6 @@ class FreqShowModel(object):
                 self.waterfall_speed_labels = ['SLOW', 'MED', 'FAST', 'MAX']
                 self.waterfall_speed_intervals = [0.1, 1.0 / 30.0, 0.01, 1.0 / 300.0]
                 self.waterfall_scroll_pixels = [1, 2, 4, 8]
-                settings = self.load_settings()
                 self.center_freq = settings.get("center_freq", self.center_freq)
                 self.sample_rate = settings.get("sample_rate", self.sample_rate)
                 self.gain = settings.get("gain", self.gain)
@@ -69,6 +68,7 @@ class FreqShowModel(object):
                 self.set_center_freq(self.center_freq)
                 self.set_sample_rate(self.sample_rate)
                 self.set_gain(self.gain)
+                settings = self.load_settings()
 
         def load_settings(self):
                 try:
