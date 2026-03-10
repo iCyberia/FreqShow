@@ -455,7 +455,7 @@ class SpectrogramBase(ViewBase):
 			tapped_freq = left_freq + (float(mx) / float(width)) * sample_rate
 
 			self.model.set_center_freq(tapped_freq)
-			self.controller.waterfall.clear_waterfall()
+			# self.controller.waterfall.clear_waterfall()
 
 	def quit_click(self, button):
 		self.controller.message_dialog('QUIT: Are you sure?',
