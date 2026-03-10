@@ -41,8 +41,8 @@ CLICK_DEBOUNCE  = 0.4	# Number of seconds to wait between clicks events. Set
 						# double clicks from hard screen presses.
 
 # Font size configuration.
-MAIN_FONT = 33
-NUM_FONT  = 50
+MAIN_FONT = 22
+NUM_FONT  = 22
 
 # Color configuration (RGB tuples, 0 to 255).
 MAIN_BG        = (  0,   0,   0) # Black
