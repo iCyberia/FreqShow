@@ -86,8 +86,14 @@ class FreqShowModel(object):
                         self.waterfall_speed_index = settings["waterfall_speed_index"]
 
                 # Apply the settings.
-                self.set_min_intensity(self.min_intensity)
-                self.set_max_intensity(self.max_intensity)
+                if self.min_intensity is not None:
+                        self.set_min_intensity(self.min_intensity)
+                else:
+                        self.set_min_intensity(-3)
+                if self.max_intensity is not None:
+                        self.set_max_intensity(self.max_intensity)
+                else:
+                        self.set_max_intensity(50)
                 self.set_center_freq(self.center_freq)
                 self.set_sample_rate(self.sample_rate)
                 self.set_gain(self.gain)
