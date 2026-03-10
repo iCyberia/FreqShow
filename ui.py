@@ -73,7 +73,7 @@ class Button(object):
 	border_color = (200, 200, 200)
 	padding_px   = 2
 	border_px    = 2
-	font_size    = 33
+	font_size    = 22
 
 	def __init__(self, rect, text, click=None, font_size=None, bg_color=None):
 		"""Create a button at the provided rect (tuple of x, y, width, height)
@@ -98,10 +98,28 @@ class Button(object):
 		self.label_pos = align(self.label.get_rect(), self.rect)
 
 	def render(self, screen):
-		"""Render the button on the provided surface."""
-		screen.fill(self.bg_color, self.rect)
-		pygame.draw.rect(screen, self.border_color, self.rect, self.border_px)
-		screen.blit(self.label, self.label_pos)
+			"""Render the button on the provided surface."""
+			x, y, width, height = map(int, self.rect)
+			rect = pygame.Rect(x, y, width, height)
+
+			radius = min(18, height // 3)
+
+			# Main button body.
+			pygame.draw.rect(screen, self.bg_color, rect, border_radius=radius)
+
+			# Softer outer border.
+			pygame.draw.rect(screen, self.border_color, rect, width=self.border_px, border_radius=radius)
+
+			# Subtle top highlight for a more modern surface feel.
+			highlight_rect = pygame.Rect(x + 1, y + 1, max(1, width - 2), max(1, height // 3))
+			highlight_color = (
+					min(self.bg_color[0] + 18, 255),
+					min(self.bg_color[1] + 18, 255),
+					min(self.bg_color[2] + 18, 255),
+			)
+			pygame.draw.rect(screen, highlight_color, highlight_rect, border_radius=radius)
+
+			screen.blit(self.label, self.label_pos)
 
 	def click(self, location):
 		"""Click handler will fire the button's click handler if the provided

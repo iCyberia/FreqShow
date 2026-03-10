@@ -48,11 +48,11 @@ NUM_FONT  = 22
 MAIN_BG        = (  0,   0,   0) # Black
 INPUT_BG       = ( 60, 255, 255) # Cyan-ish
 INPUT_FG       = (  0,   0,   0) # Black
-CANCEL_BG      = ( 60,  60,  60) # Dark red
-ACCEPT_BG      = ( 45, 128,  45) # Dark green
-BUTTON_BG      = ( 60,  60,  60) # Dark gray
-BUTTON_FG      = (255, 255, 255) # White
-BUTTON_BORDER  = (200, 200, 200) # White/light gray
+CANCEL_BG      = (90, 42, 48)
+ACCEPT_BG      = (38, 104, 72)
+BUTTON_BG      = (28, 32, 40)
+BUTTON_FG      = (245, 247, 250)
+BUTTON_BORDER  = (70, 78, 92)
 INSTANT_LINE   = (  0, 255, 128) # Bright yellow green.
 
 # Define gradient of colors for the waterfall graph.  Gradient goes from blue to
@@ -64,8 +64,8 @@ ui.MAIN_FONT = MAIN_FONT
 ui.Button.fg_color     = BUTTON_FG
 ui.Button.bg_color     = BUTTON_BG
 ui.Button.border_color = BUTTON_BORDER
-ui.Button.padding_px   = 2
-ui.Button.border_px    = 2
+ui.Button.padding_px   = 6
+ui.Button.border_px    = 1
 
 
 if __name__ == '__main__':
