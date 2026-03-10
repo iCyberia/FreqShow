@@ -246,6 +246,7 @@ def main() -> None:
             last_touch_ms = 0
             last_fps_poll = 0.0
             fps_text = "-- FPS"
+            render_ms = 0.0
 
             while running:
                 for event in pygame.event.get():
