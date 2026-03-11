@@ -293,13 +293,13 @@ class SettingsList(ViewBase):
 		# Create buttons.
 		self.buttons = ui.ButtonGrid(model.width, model.height, 4, 5)
 		self.buttons.add(0, 0, centerfreq_text, colspan=4, click=self.centerfreq_click)
-		self.buttons.add(0, 1, samplerate_text, colspan=4, click=self.sample_click)
-		self.buttons.add(0, 2, gain_text, colspan=4, click=self.gain_click)
-		self.buttons.add(0, 3, min_text, colspan=2, click=self.min_click)
-		self.buttons.add(2, 3, max_text, colspan=2, click=self.max_click)
-		self.buttons.add(0, 4, 'BACK', click=self.controller.change_to_main)
-		self.buttons.add(1, 4, wf_text, colspan=1, click=self.waterfall_speed_click)
-		self.buttons.add(3, 4, wf_avg_text, colspan=2, click=self.waterfall_avg_click)
+		self.buttons.add(0, 1, samplerate_text, colspan=2, click=self.sample_click)
+		self.buttons.add(2, 1, gain_text, colspan=2, click=self.gain_click)
+		self.buttons.add(0, 2, min_text, colspan=2, click=self.min_click)
+		self.buttons.add(2, 2, max_text, colspan=2, click=self.max_click)
+		self.buttons.add(0, 3, wf_text, colspan=2, click=self.waterfall_speed_click)
+		self.buttons.add(2, 3, wf_avg_text, colspan=2, click=self.waterfall_avg_click)
+		self.buttons.add(0, 4, 'BACK', colspan=1, click=self.controller.change_to_main)
 
 	def waterfall_speed_click(self, button):
 		self.model.cycle_waterfall_speed()
