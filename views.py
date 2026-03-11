@@ -288,7 +288,7 @@ class SettingsList(ViewBase):
 		min_text = 'MIN: {0} dB'.format(model.get_min_string())
 		max_text = 'MAX: {0} dB'.format(model.get_max_string())
 		wf_text = 'WF SPEED: {0}'.format(model.get_waterfall_speed_label())
-		wf_avg_text = 'WF AVG\n{}'.format(model.get_waterfall_avg_label())
+		wf_avg_text = 'WF AVG:{}'.format(model.get_waterfall_avg_label())
 
 		# Create buttons.
 		self.buttons = ui.ButtonGrid(model.width, model.height, 4, 5)
