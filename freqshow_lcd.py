@@ -8,6 +8,7 @@ import time
 import st7796_lcd as st7796
 import controller
 import model
+import views
 
 DISPLAY_WIDTH = 480
 DISPLAY_HEIGHT = 320
@@ -284,11 +285,13 @@ def main() -> None:
 
                 fscontroller.current().render(screen)
 
-                status_text = f"{fps_text}  {cpu_temp_text}"
-                temp_surface = temp_font.render(status_text, True, (255, 255, 255))
-                temp_rect = temp_surface.get_rect()
-                temp_rect.bottomright = (screen.get_width() - 6, screen.get_height() - 6)
-                screen.blit(temp_surface, temp_rect)
+                current_view = fscontroller.current()
+                if not isinstance(current_view, views.SettingsList):
+                    status_text = f"{fps_text}  {cpu_temp_text}"
+                    temp_surface = temp_font.render(status_text, True, (255, 255, 255))
+                    temp_rect = temp_surface.get_rect()
+                    temp_rect.bottomright = (screen.get_width() - 6, screen.get_height() - 6)
+                    screen.blit(temp_surface, temp_rect)
 
                 pygame.display.flip()
 
