@@ -298,8 +298,8 @@ class SettingsList(ViewBase):
 		self.buttons.add(0, 3, min_text, colspan=2, click=self.min_click)
 		self.buttons.add(2, 3, max_text, colspan=2, click=self.max_click)
 		self.buttons.add(0, 4, 'BACK', click=self.controller.change_to_main)
-		self.buttons.add(1, 4, wf_text, colspan=2, click=self.waterfall_speed_click)
-		self.buttons.add(2, 4, wf_avg_text, click=self.waterfall_avg_click)
+		self.buttons.add(1, 4, wf_text, colspan=1, click=self.waterfall_speed_click)
+		self.buttons.add(3, 4, wf_avg_text, click=self.waterfall_avg_click)
 
 	def waterfall_speed_click(self, button):
 		self.model.cycle_waterfall_speed()
